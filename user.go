@@ -2,6 +2,7 @@ package main
 
 import (
 	"net"
+	"strings"
 )
 
 type User struct {
@@ -44,9 +45,43 @@ func (this *User) Offline() {
 	this.server.BroadCast(this, "Offline")
 }
 
+func (this *User) SendMsg(msg string) {
+	this.conn.Write([]byte(msg))
+}
+
 // 处理消息
 func (this *User) DoMessage(msg string) {
-	this.server.BroadCast(this, msg)
+	if msg == "who" {
+		this.server.mapLock.Lock()
+		for _, user := range this.server.OnlineMap {
+			onlineMsg := "[" + user.Addr + "]" + user.Name + ":" + "Ready...\n"
+			this.SendMsg(onlineMsg)
+		}
+		this.server.mapLock.Unlock()
+	} else if strings.HasPrefix(msg, "rename|") {
+		newName := strings.TrimSpace(strings.TrimPrefix(msg, "rename|"))
+		if newName == "" {
+			this.SendMsg("username cannot be empty\r\n")
+			return
+		}
+
+		this.server.mapLock.Lock()
+		_, ok := this.server.OnlineMap[newName]
+		if ok {
+			this.server.mapLock.Unlock()
+			this.SendMsg("username already use\r\n")
+			return
+		}
+
+		delete(this.server.OnlineMap, this.Name)
+		this.Name = newName
+		this.server.OnlineMap[newName] = this
+		this.server.mapLock.Unlock()
+
+		this.SendMsg("username already change: " + newName + "\r\n")
+	} else {
+		this.server.BroadCast(this, msg)
+	}
 }
 
 // 监听user channel 方法，有消息发送客户端

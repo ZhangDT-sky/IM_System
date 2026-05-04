@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"strings"
 	"sync"
 )
 
@@ -68,7 +69,7 @@ func (this *Server) Handler(conn net.Conn) {
 				return
 			}
 
-			msg := string(buf[:n-1])
+			msg := strings.TrimRight(string(buf[:n]), "\r\n")
 			user.DoMessage(msg)
 		}
 	}()
