@@ -79,6 +79,34 @@ func (this *User) DoMessage(msg string) {
 		this.server.mapLock.Unlock()
 
 		this.SendMsg("username already change: " + newName + "\r\n")
+	} else if strings.HasPrefix(msg, "to|") {
+		parts := strings.SplitN(msg, "|", 3)
+		if len(parts) != 3 {
+			this.SendMsg("message format error, use: to|name|content\r\n")
+			return
+		}
+
+		remoteName := strings.TrimSpace(parts[1])
+		content := strings.TrimSpace(parts[2])
+
+		if remoteName == "" {
+			this.SendMsg("username cannot be empty\r\n")
+			return
+		}
+		if content == "" {
+			this.SendMsg("message cannot be empty\r\n")
+			return
+		}
+
+		this.server.mapLock.RLock()
+		remoteUser, ok := this.server.OnlineMap[remoteName]
+		this.server.mapLock.RUnlock()
+
+		if !ok {
+			this.SendMsg("username not found\r\n")
+			return
+		}
+		remoteUser.SendMsg(this.Name + " speak: " + content + "\r\n")
 	} else {
 		this.server.BroadCast(this, msg)
 	}
