@@ -86,7 +86,7 @@ func (this *Server) Handler(conn net.Conn) {
 			//重置
 		case <-time.After(time.Minute * 10):
 			//超时
-			user.SendMsg("Get Out!!!")
+			user.SendMsg("Get Out!!!\r\n")
 			user.Offline()
 			conn.Close()
 			return
